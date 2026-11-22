@@ -1,0 +1,14 @@
+(function(){
+ const client=()=>window.tweSupabase;
+ const $=id=>document.getElementById(id);
+ function show(type,msg){const el=$('message');if(!el)return;el.className='message show '+type;el.textContent=msg;}
+ function configCheck(){if(!window.tweSupabaseReady){show('error','The website connection has not been configured yet. The project owner must add the Supabase project URL and public anon key in assets/config.js.');return false;}return true;}
+ const register=$('registerForm');
+ if(register)register.addEventListener('submit',async e=>{e.preventDefault();if(!configCheck())return;const email=$('email').value.trim(),password=$('password').value,confirm=$('confirmPassword').value;if(password.length<8){show('error','Use a password with at least 8 characters.');return;}if(password!==confirm){show('error','The passwords do not match.');return;}const btn=register.querySelector('button[type=submit]');btn.disabled=true;btn.textContent='Creating account…';try{const {data,error}=await client().auth.signUp({email,password,options:{emailRedirectTo:location.origin+'/dashboard.html'}});if(error)throw error;if(data.session){location.href='dashboard.html';return;}show('success','Your account has been created. Check your email for the verification link, then sign in.');register.reset();}catch(err){show('error',err.message||'Registration failed.');}finally{btn.disabled=false;btn.textContent='Create account';}});
+ const login=$('loginForm');
+ if(login)login.addEventListener('submit',async e=>{e.preventDefault();if(!configCheck())return;const btn=login.querySelector('button[type=submit]');btn.disabled=true;btn.textContent='Signing in…';try{const {error}=await client().auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;location.href='dashboard.html';}catch(err){show('error',err.message||'Unable to sign in.');}finally{btn.disabled=false;btn.textContent='Sign in';}});
+ const reset=$('resetForm');
+ if(reset)reset.addEventListener('submit',async e=>{e.preventDefault();if(!configCheck())return;try{const {error}=await client().auth.resetPasswordForEmail($('email').value.trim(),{redirectTo:location.origin+'/reset-password.html'});if(error)throw error;show('success','If an account exists for that email, a password-reset link has been sent.');}catch(err){show('error',err.message||'Could not request a reset link.');}});
+ const update=$('updatePasswordForm');
+ if(update)update.addEventListener('submit',async e=>{e.preventDefault();if(!configCheck())return;const p=$('password').value;if(p.length<8){show('error','Use a password with at least 8 characters.');return;}try{const {error}=await client().auth.updateUser({password:p});if(error)throw error;show('success','Password updated. You can now continue to your dashboard.');}catch(err){show('error',err.message||'Could not update password.');}});
+})();
