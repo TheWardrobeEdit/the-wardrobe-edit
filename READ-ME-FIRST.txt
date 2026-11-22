@@ -1,0 +1,16 @@
+THE WARDROBE EDIT — CLOUDFLARE STATIC ASSETS CONFIGURATION
+
+Add the two files in this folder to the ROOT of your existing GitHub repository:
+- wrangler.jsonc
+- .assetsignore
+
+Do not put them inside assets/ or supabase/.
+
+The configuration serves the existing HTML/CSS/JavaScript website files from the repository root as Cloudflare Worker Static Assets. It excludes the Supabase SQL source folder and project documentation from public static assets.
+
+Cloudflare deployment settings:
+- Build command: leave blank (there is no build step)
+- Do not add a build output directory
+- Cloudflare should deploy using Wrangler's static-assets configuration.
+
+The Supabase publishable key in assets/config.js is designed for browser use. Never add a Supabase secret/service_role key or database password to this repository.
