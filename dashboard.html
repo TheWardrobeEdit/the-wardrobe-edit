@@ -1,1 +1,94 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your dashboard — THE WARDROBE EDIT</title><link rel="stylesheet" href="assets/site.css"><script src="assets/config.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="scripts/supabase-client.js" defer></script><script src="scripts/dashboard.js" defer></script></head><body><div class="shell"><header class="topbar"><a class="brand" href="index.html"><small>THE PERSONAL STYLE SYSTEM</small><strong>THE WARDROBE EDIT</strong></a><div class="navlinks"><span id="userEmail" class="muted"></span><button id="logout" class="btn secondary">Sign out</button></div></header><main class="dashboard"><div class="dash-head"><div><div class="eyebrow">Your private style space</div><h1>Welcome to your edit.</h1><p class="muted">Your wardrobe, combinations and personal styling profile will live here.</p></div><span id="connectionStatus" class="status">Checking account…</span></div><div class="grid"><article class="panel"><div class="metric" id="garmentCount">—</div><div class="metric-label">Your garments</div></article><article class="panel"><div class="metric" id="outfitCount">—</div><div class="metric-label">Your saved outfits</div></article><article class="panel"><div class="metric">Private</div><div class="metric-label">Account data access</div></article></div><div id="setupNotice" class="notice hidden"><strong>Backend setup is not complete yet.</strong><p>The website files are ready, but the Supabase project URL and public key still need to be added. The next setup step is to create your free Supabase project and apply the supplied database schema.</p></div><h2 class="section-title">Your workspace</h2><div class="grid"><article class="panel"><div class="eyebrow">01 / Wardrobe</div><h3>My wardrobe</h3><p class="muted">Your garment inventory and editable garment profiles.</p><span class="status">Database integration — next stage</span></article><article class="panel"><div class="eyebrow">02 / Styling</div><h3>Outfit generator</h3><p class="muted">Automatic and manual outfit creation using your own clothes.</p><span class="status">Existing v0.7 engine retained</span></article><article class="panel"><div class="eyebrow">03 / Personalisation</div><h3>Style DNA</h3><p class="muted">Your preferences, ratings and styling feedback.</p><span class="status">Account data model prepared</span></article></div></main><footer class="footer"><span>THE WARDROBE EDIT</span><span>Signed-in account workspace</span></footer></div></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THE WARDROBE EDIT</title>
+
+<script src="assets/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="scripts/supabase-client.js"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+    background:#080909;
+      color:#f4f0e6;
+        font-family:Arial,sans-serif
+        }
+        header{
+          height:58px;
+            padding:10px 18px;
+              display:flex;
+                align-items:center;
+                  justify-content:space-between;
+                    border-bottom:1px solid #40351d;
+                      background:#10100d
+                      }
+                      .brand{
+                        font:20px Georgia,serif;
+                          letter-spacing:2px;
+                            color:#f2d27a
+                            }
+                            button{
+                              background:#191916;
+                                color:#f4f0e6;
+                                  border:1px solid #59451f;
+                                    border-radius:8px;
+                                      padding:9px 14px
+                                      }
+                                      iframe{
+                                        width:100%;
+                                          height:calc(100vh - 58px);
+                                            border:0;
+                                              display:block
+                                              }
+                                              #status{
+                                                padding:30px;
+                                                  font:16px Arial
+                                                  }
+                                                  </style>
+                                                  </head>
+
+                                                  <body>
+
+                                                  <header>
+                                                    <div class="brand">THE WARDROBE EDIT</div>
+                                                      <button id="logout">Sign out</button>
+                                                      </header>
+
+                                                      <div id="status">Checking your account…</div>
+
+                                                      <iframe id="app" title="Your wardrobe" hidden></iframe>
+
+                                                      <script>
+                                                      (async()=>{
+                                                        const status=document.getElementById('status');
+                                                          const client=window.tweSupabase;
+
+                                                            if(!client){
+                                                                status.textContent='Connection error. Please try again.';
+                                                                    return;
+                                                                      }
+
+                                                                        const {data:{session}}=await client.auth.getSession();
+
+                                                                          if(!session){
+                                                                              location.replace('login.html');
+                                                                                  return;
+                                                                                    }
+
+                                                                                      document.getElementById('app').src='legacy-v0.7.html';
+                                                                                        document.getElementById('app').hidden=false;
+                                                                                          status.hidden=true;
+
+                                                                                            document.getElementById('logout').onclick=async()=>{
+                                                                                                await client.auth.signOut();
+                                                                                                    location.replace('index.html');
+                                                                                                      };
+                                                                                                      })();
+                                                                                                      </script>
+
+                                                                                                      </body>
+                                                                                                      </html>
