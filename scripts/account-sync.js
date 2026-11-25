@@ -1,149 +1,164 @@
-
 (function () {
   const KEYS = {
-      wardrobe: "twe_wardrobe",
-          plans: "twe_plans",
-              wishes: "twe_wishes",
-                  savedLooks: "twe_savedLooks",
-                      dna: "twe_dna",
-                          history: "twe_history",
-                              disliked: "twe_disliked",
-                                  feedback: "twe_feedback"
-                                    };
+    wardrobe: "twe_wardrobe",
+    plans: "twe_plans",
+    wishes: "twe_wishes",
+    savedLooks: "twe_savedLooks",
+    dna: "twe_dna",
+    history: "twe_history",
+    disliked: "twe_disliked",
+    feedback: "twe_feedback"
+  };
 
-                                      const DEFAULTS = {
-                                          twe_wardrobe: [],
-                                              twe_plans: [],
-                                                  twe_wishes: [],
-                                                      twe_savedLooks: [],
-                                                          twe_dna: {
-                                                                aesthetic: "Quiet luxury",
-                                                                      silhouette: "Clean & refined",
-                                                                            branding: "Minimal / no visible logos",
-                                                                                  palette: "Understated neutrals"
-                                                                                      },
-                                                                                          twe_history: [],
-                                                                                              twe_disliked: [],
-                                                                                                  twe_feedback: {}
-                                                                                                    };
+  const DEFAULTS = {
+    twe_wardrobe: [],
+    twe_plans: [],
+    twe_wishes: [],
+    twe_savedLooks: [],
+    twe_dna: {
+      aesthetic: "Quiet luxury",
+      silhouette: "Clean & refined",
+      branding: "Minimal / no visible logos",
+      palette: "Understated neutrals"
+    },
+    twe_history: [],
+    twe_disliked: [],
+    twe_feedback: {}
+  };
 
-                                                                                                      window.__TWE_BOOTSTRAP = (async function () {
-                                                                                                          const client = window.tweSupabase;
+  function showError(error) {
+    console.error("Wardrobe account setup failed:", error);
 
-                                                                                                              if (!client) {
-                                                                                                                    throw new Error("Supabase connection is unavailable.");
-                                                                                                                        }
+    const details = [
+      error && error.message,
+      error && error.details,
+      error && error.hint,
+      error && error.code ? "Error code: " + error.code : ""
+    ].filter(Boolean).join("\n\n") || "No additional error information was provided.";
 
-                                                                                                                            const { data: sessionData, error: sessionError } =
-                                                                                                                                  await client.auth.getSession();
+    document.body.innerHTML =
+      '<div style="background:#080909;color:#f4f0e6;min-height:100vh;padding:30px;font-family:Arial,sans-serif">' +
+      '<h2 style="color:#f2d27a">Account connection problem</h2>' +
+      '<p>Your wardrobe has not been loaded. No account data has been overwritten.</p>' +
+      '<p><strong>Error details:</strong></p>' +
+      '<pre id="errorDetails" style="white-space:pre-wrap;overflow-wrap:anywhere;background:#191916;padding:14px;border-radius:8px;color:#f4f0e6"></pre>' +
+      '<button onclick="location.reload()" style="padding:10px 16px;margin-top:15px">Try again</button>' +
+      '</div>';
 
-                                                                                                                                      if (sessionError) throw sessionError;
+    document.getElementById("errorDetails").textContent = details;
+  }
 
-                                                                                                                                          const session = sessionData.session;
+  window.__TWE_BOOTSTRAP = (async function () {
+    const client = window.tweSupabase;
 
-                                                                                                                                              if (!session) {
-                                                                                                                                                    window.location.replace("login.html");
-                                                                                                                                                          return false;
-                                                                                                                                                              }
+    if (!client) {
+      throw new Error("Supabase connection is unavailable. Check the Supabase configuration and client scripts.");
+    }
 
-                                                                                                                                                                  const userId = session.user.id;
+    const { data: sessionData, error: sessionError } =
+      await client.auth.getSession();
 
-                                                                                                                                                                      const { data: profile, error: readError } = await client
-                                                                                                                                                                            .from("style_profiles")
-                                                                                                                                                                                  .select("data")
-                                                                                                                                                                                        .eq("user_id", userId)
-                                                                                                                                                                                              .maybeSingle();
+    if (sessionError) throw sessionError;
 
-                                                                                                                                                                                                  if (readError) throw readError;
+    const session = sessionData.session;
 
-                                                                                                                                                                                                      let accountData;
+    if (!session) {
+      window.location.replace("login.html");
+      return false;
+    }
 
-                                                                                                                                                                                                          if (profile && profile.data) {
-                                                                                                                                                                                                                accountData = { ...DEFAULTS, ...profile.data };
-                                                                                                                                                                                                                    } else {
-                                                                                                                                                                                                                          accountData = { ...DEFAULTS };
+    const userId = session.user.id;
 
-                                                                                                                                                                                                                                const { error: createError } = await client
-                                                                                                                                                                                                                                        .from("style_profiles")
-                                                                                                                                                                                                                                                .upsert({
-                                                                                                                                                                                                                                                          user_id: userId,
-                                                                                                                                                                                                                                                                     data: accountData,
-                                                                                                                                                                                                                                                                              updated_at: new Date().toISOString()
-                                                                                                                                                                                                                                                                                      }, { onConflict: "user_id" });
+    const { data: profile, error: readError } = await client
+      .from("style_profiles")
+      .select("data")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-                                                                                                                                                                                                                                                                                            if (createError) throw createError;
-                                                                                                                                                                                                                                                                                                }
+    if (readError) throw readError;
 
-                                                                                                                                                                                                                                                                                                    const originalSetItem = Storage.prototype.setItem;
+    let accountData;
 
-                                                                                                                                                                                                                                                                                                        Object.keys(KEYS).forEach(function (name) {
-                                                                                                                                                                                                                                                                                                              const key = KEYS[name];
-                                                                                                                                                                                                                                                                                                                    const value = accountData[key] !== undefined
-                                                                                                                                                                                                                                                                                                                            ? accountData[key]
-                                                                                                                                                                                                                                                                                                                                    : DEFAULTS[key];
+    if (profile && profile.data) {
+      accountData = { ...DEFAULTS, ...profile.data };
+    } else {
+      accountData = { ...DEFAULTS };
 
-                                                                                                                                                                                                                                                                                                                                          originalSetItem.call(
-                                                                                                                                                                                                                                                                                                                                                  localStorage,
-                                                                                                                                                                                                                                                                                                                                                          key,
-                                                                                                                                                                                                                                                                                                                                                                  JSON.stringify(value)
-                                                                                                                                                                                                                                                                                                                                                                        );
-                                                                                                                                                                                                                                                                                                                                                                            });
+      const { error: createError } = await client
+        .from("style_profiles")
+        .upsert({
+          user_id: userId,
+          data: accountData,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id" });
 
-                                                                                                                                                                                                                                                                                                                                                                                let saveTimer = null;
-                                                                                                                                                                                                                                                                                                                                                                                    let saveQueue = Promise.resolve();
+      if (createError) throw createError;
+    }
 
-                                                                                                                                                                                                                                                                                                                                                                                        async function syncAccount() {
-                                                                                                                                                                                                                                                                                                                                                                                              const snapshot = {};
+    const originalSetItem = Storage.prototype.setItem;
 
-                                                                                                                                                                                                                                                                                                                                                                                                    Object.keys(KEYS).forEach(function (name) {
-                                                                                                                                                                                                                                                                                                                                                                                                            const key = KEYS[name];
-                                                                                                                                                                                                                                                                                                                                                                                                                    try {
-                                                                                                                                                                                                                                                                                                                                                                                                                              snapshot[key] = JSON.parse(localStorage.getItem(key));
-                                                                                                                                                                                                                                                                                                                                                                                                                                      } catch (e) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                snapshot[key] = DEFAULTS[key];
-                                                                                                                                                                                                                                                                                                                                                                                                                                                        }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                              });
+    Object.keys(KEYS).forEach(function (name) {
+      const key = KEYS[name];
+      const value = accountData[key] !== undefined
+        ? accountData[key]
+        : DEFAULTS[key];
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                    saveQueue = saveQueue.then(async function () {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                            const { error } = await client
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      .from("style_profiles")
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                .upsert({
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            user_id: userId,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        data: snapshot,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    updated_at: new Date().toISOString()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              }, { onConflict: "user_id" });
+      originalSetItem.call(
+        localStorage,
+        key,
+        JSON.stringify(value)
+      );
+    });
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      if (error) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                console.error("Wardrobe sync failed:", error);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              });
+    let saveTimer = null;
+    let saveQueue = Promise.resolve();
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    await saveQueue;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        }
+    async function syncAccount() {
+      const snapshot = {};
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            Storage.prototype.setItem = function (key, value) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  originalSetItem.call(this, key, value);
+      Object.keys(KEYS).forEach(function (name) {
+        const key = KEYS[name];
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        if (this === localStorage && Object.values(KEYS).includes(key)) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                clearTimeout(saveTimer);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        saveTimer = setTimeout(syncAccount, 700);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  };
+        try {
+          snapshot[key] = JSON.parse(localStorage.getItem(key));
+        } catch (e) {
+          snapshot[key] = DEFAULTS[key];
+        }
+      });
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      console.log("Wardrobe account sync ready.");
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          return true;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            })().catch(function (error) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                console.error("Wardrobe account setup failed:", error);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                document.querySelector("p").textContent = "Error details: " + (error.message || error.details || JSON.stringify(error));
+      saveQueue = saveQueue.then(async function () {
+        const { error } = await client
+          .from("style_profiles")
+          .upsert({
+            user_id: userId,
+            data: snapshot,
+            updated_at: new Date().toISOString()
+          }, { onConflict: "user_id" });
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    document.body.innerHTML =
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          '<div style="background:#080909;color:#f4f0e6;min-height:100vh;padding:40px;font-family:Arial,sans-serif">' +
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                '<h2 style="color:#f2d27a">Account connection problem</h2>' +
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      '<p>Your wardrobe has not been loaded. No account data has been overwritten.</p>' +
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            '<p>Please refresh the page or sign in again.</p>' +
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  '<button onclick="location.reload()" style="padding:10px 16px">Try again</button>' +
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        '</div>';
+        if (error) {
+          console.error("Wardrobe sync failed:", error);
+        }
+      }).catch(function (error) {
+        console.error("Wardrobe sync failed:", error);
+      });
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            throw error;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              });
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              })();
+      await saveQueue;
+    }
+
+    Storage.prototype.setItem = function (key, value) {
+      originalSetItem.call(this, key, value);
+
+      if (this === localStorage && Object.values(KEYS).includes(key)) {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(syncAccount, 700);
+      }
+    };
+
+    console.log("Wardrobe account sync ready.");
+    return true;
+
+  })().catch(function (error) {
+    showError(error);
+    throw error;
+  });
+})();
