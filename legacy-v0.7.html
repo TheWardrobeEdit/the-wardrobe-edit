@@ -16,7 +16,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .side-note{margin-top:auto;padding:14px;color:var(--muted);font-size:11px;border-top:1px solid var(--line)}
 main{padding:34px clamp(18px,4vw,56px);max-width:1500px;width:100%;margin:auto}
 .top{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:30px}.eyebrow{color:var(--accent);font-size:10px;letter-spacing:.2em;text-transform:uppercase}.top h1{font:500 clamp(25px,3vw,36px)/1.1 Georgia,serif;margin:7px 0}.sub{color:var(--muted);margin:0}.top-actions{display:flex;gap:9px;flex-wrap:wrap}
-.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:10px 14px;border-radius:9px}.btn.primary{background:linear-gradient(135deg,#f0d27b,#bd8c24);color:#17130a;border-color:#e2bd5b;font-weight:700;box-shadow:0 5px 22px #c18d2526}.btn:hover{filter:brightness(1.12)}.btn.small{padding:6px 9px;font-size:12px}
+.btn{border:1#px solid var(--line);background:var(--panel2);color:var(--text);padding:10px 14px;border-radius:9px}.btn.primary{background:linear-gradient(135deg,#f0d27b,#bd8c24);color:#17130a;border-color:#e2bd5b;font-weight:700;box-shadow:0 5px 22px #c18d2526}.btn:hover{filter:brightness(1.12)}.btn.small{padding:6px 9px;font-size:12px}
 .page{display:none}.page.active{display:block}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:26px}.stat,.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius)}.stat{padding:18px}.stat .num{font:32px Georgia,serif}.stat .label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em;margin-top:4px}
 .section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:24px 0 13px}.section-head h2{font:500 23px Georgia,serif;margin:0}.section-head p{color:var(--muted);margin:4px 0 0;font-size:12px}
@@ -144,7 +144,16 @@ main{padding:34px clamp(18px,4vw,56px);max-width:1500px;width:100%;margin:auto}
     <div class="modal-actions"><button type="button" class="btn" id="deleteBtn" style="color:var(--danger)">Delete garment</button><div><button type="button" class="btn" id="cancelBtn">Cancel</button> <button class="btn primary" type="submit">Save changes</button></div></div>
   </form>
 </div></div>
+
+<script src="assets/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="scripts/supabase-client.js"></script>
+<script src="scripts/account-sync.js"></script>
+
 <script>
+
+ window.__TWE_BOOTSTRAP.then(()=>{
+
 const seed = [
 ["TH White Cotton Quarter-Zip","Jumpers","Tommy Hilfiger","White","80% cotton / 20% polyester"],
 ["TH Navy Cotton Quarter-Zip","Jumpers","Tommy Hilfiger","Navy","80% cotton / 20% polyester"],
@@ -174,7 +183,7 @@ const seed = [
 ["Jordan 1 Mid","Footwear","Jordan","White / midnight navy / wolf grey",""],
 ["Jordan 1 Mid University Blue","Footwear","Jordan","University blue / black / white",""]
 ].map((x,i)=>({id:"g"+(i+1),name:x[0],category:x[1],brand:x[2],colour:x[3],material:x[4],price:null,url:"",size:"",date:"",status:"Owned",notes:"",season:"All-season",formality:6,image:"",wears:0,favourite:false}));
-let garments=load("twe_wardrobe",seed), plans=load("twe_plans",[]), wishes=load("twe_wishes",[]), savedLooks=load("twe_savedLooks",[]), dna=load("twe_dna",{aesthetic:"Quiet luxury",silhouette:"Clean & refined",branding:"Minimal / no visible logos",palette:"Understated neutrals"}), outfitHistory=load("twe_history",[]),disliked=load("twe_disliked",[]),outfitFeedback=load("twe_feedback",{});
+let garments=load("twe_wardrobe",[]), wishes=load("twe_wishes",[]), savedLooks=load("twe_savedLooks",[]), dna=load("twe_dna",{aesthetic:"Quiet luxury",silhouette:"Clean & refined",branding:"Minimal / no visible logos",palette:"Understated neutrals"}), outfitHistory=load("twe_history",[]),disliked=load("twe_disliked",[]),outfitFeedback=load("twe_feedback",{});
 function load(k,d){try{let v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function save(){localStorage.setItem("twe_wardrobe",JSON.stringify(garments));localStorage.setItem("twe_plans",JSON.stringify(plans));localStorage.setItem("twe_wishes",JSON.stringify(wishes));localStorage.setItem("twe_savedLooks",JSON.stringify(savedLooks));localStorage.setItem("twe_dna",JSON.stringify(dna));localStorage.setItem("twe_history",JSON.stringify(outfitHistory));localStorage.setItem("twe_disliked",JSON.stringify(disliked));localStorage.setItem("twe_feedback",JSON.stringify(outfitFeedback));render()}
 const $=id=>document.getElementById(id);
@@ -348,5 +357,7 @@ $("exportBtn").onclick=()=>{let blob=new Blob([JSON.stringify({version:"0.7",gar
 $("importBtn").onclick=()=>$("importFile").click();$("importFile").onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.garments))throw new Error("Invalid backup");if(!confirm("Import this backup and replace the data currently stored in this browser?"))return;garments=d.garments;plans=d.plans||[];wishes=d.wishes||[];savedLooks=d.savedLooks||[];dna=d.dna||dna;outfitHistory=d.outfitHistory||[];disliked=d.disliked||[];outfitFeedback=d.outfitFeedback||{};save();alert("Backup imported.")}catch(err){alert("Could not import this backup. Check that it is a valid Wardrobe Edit JSON export.")}e.target.value=""};
 $("planDate").value=new Date().toISOString().slice(0,10);
 render();$("dnaAesthetic").value=dna.aesthetic;$("dnaSilhouette").value=dna.silhouette;$("dnaBranding").value=dna.branding;$("dnaPalette").value=dna.palette;showPage("dashboard");
+
+ });
 </script>
 </body></html>
